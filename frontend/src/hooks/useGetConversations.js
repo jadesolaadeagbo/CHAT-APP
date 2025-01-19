@@ -10,13 +10,24 @@ const useGetConversations = () => {
 			setLoading(true);
 			try {
 				const res = await fetch("/api/users");
-				const data = await res.json();
-				if (data.error) {
-					throw new Error(data.error);
+
+				// Check if the response is OK (status 200)
+				if (res.status !== 200) {
+					// If the response is not ok, throw an error with the status
+					throw new Error(`HTTP error! status: ${res.status}`);
 				}
+
+				// Check if the response is JSON
+				const contentType = res.headers.get("content-type");
+				if (!contentType || !contentType.includes("application/json")) {
+					throw new Error("Received non-JSON response");
+				}
+
+				const data = await res.json();
 				setConversations(data);
 			} catch (error) {
 				toast.error(error.message);
+				console.error("Error fetching conversations:", error);
 			} finally {
 				setLoading(false);
 			}
@@ -27,4 +38,5 @@ const useGetConversations = () => {
 
 	return { loading, conversations };
 };
+
 export default useGetConversations;

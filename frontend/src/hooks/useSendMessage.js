@@ -7,6 +7,11 @@ const useSendMessage = () => {
 	const { messages, setMessages, selectedConversation } = useConversation();
 
 	const sendMessage = async (message) => {
+		if (!selectedConversation?._id) {
+			toast.error("No selected conversation.");
+			return;
+		}
+		
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/messages/send/${selectedConversation._id}`, {
@@ -16,10 +21,15 @@ const useSendMessage = () => {
 				},
 				body: JSON.stringify({ message }),
 			});
-			const data = await res.json();
-			if (data.error) throw new Error(data.error);
 
-			setMessages([...messages, data]);
+			// Check if the response is ok (status 2xx)
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.error || "Failed to send message");
+			}
+
+			const data = await res.json();
+			setMessages((prevMessages) => [...prevMessages, data]);
 		} catch (error) {
 			toast.error(error.message);
 		} finally {
